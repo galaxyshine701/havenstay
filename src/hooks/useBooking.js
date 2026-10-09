@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { createBooking, getBookingByReference, getRoomWithHotel } from '../lib/api';
+import { cancelBooking, createBooking, getBookingByReference, getRoomWithHotel } from '../lib/api';
 import { useQuery } from './useQuery';
 
 const CONFLICT_MESSAGE =
@@ -41,4 +41,30 @@ export function useCreateBooking() {
   }, []);
 
   return { status, error, submit };
+}
+
+/**
+ * Cancel state: 'idle' | 'cancelling' | 'error'.
+ * cancel(bookingId) resolves to true when the database accepted the cancellation, or
+ * false when it refused (then `error` holds the database's plain-words reason).
+ */
+export function useCancelBooking() {
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState('');
+
+  const cancel = useCallback(async (bookingId) => {
+    setStatus('cancelling');
+    setError('');
+    try {
+      await cancelBooking(bookingId);
+      setStatus('idle');
+      return true;
+    } catch (err) {
+      setStatus('error');
+      setError(err?.message || 'We could not cancel this booking. Please try again.');
+      return false;
+    }
+  }, []);
+
+  return { status, error, cancel };
 }

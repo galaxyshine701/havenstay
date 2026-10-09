@@ -24,7 +24,7 @@ Open the address that `npm run dev` prints (usually http://localhost:5173).
 
 1. Create a project at supabase.com.
 2. Open **SQL Editor**, paste all of `supabase/schema.sql`, click **Run**.
-3. Paste all of `supabase/seed.sql`, click **Run**. You should now see 9 rows in `hotels` and 24 rows in `rooms` (Table Editor).
+3. Paste all of `supabase/seed.sql`, click **Run**. You should now see 9 rows in `hotels` and 23 rows in `rooms` (Table Editor).
 4. Go to **Authentication, Providers, Email** and switch **Confirm email OFF** while you test (otherwise every new account must click an email link first).
 5. Go to **Project Settings, API**. Copy **Project URL** and the **anon public** key into `.env`:
    ```

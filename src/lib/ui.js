@@ -11,6 +11,8 @@ export const btnPrimary = `${buttonBase} bg-haven-900 text-white hover:bg-haven-
 
 export const btnSecondary = `${buttonBase} border border-haven-900/20 bg-white text-haven-900 hover:bg-haven-50`;
 
+export const btnDanger = `${buttonBase} border border-danger bg-white text-danger hover:bg-danger hover:text-white`;
+
 export const linkButton =
   'inline-flex min-h-[44px] items-center rounded text-sm font-semibold text-haven-700 underline underline-offset-4 hover:text-haven-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500';
 

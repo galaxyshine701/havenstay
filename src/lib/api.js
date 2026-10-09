@@ -113,6 +113,14 @@ export async function createBooking(payload) {
   return data.reference;
 }
 
+// Cancels a booking through the database function cancel_booking(). The function checks
+// that the booking is yours and that the hotel's cancellation policy still allows it;
+// otherwise it raises an error whose message is safe to show.
+export async function cancelBooking(bookingId) {
+  const { error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId });
+  if (error) throw error;
+}
+
 // Reads a booking back from the database (row level security: only the owner can).
 export async function getBookingByReference(reference) {
   const { data, error } = await supabase

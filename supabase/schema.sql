@@ -198,18 +198,39 @@ as $$
     );
 $$;
 
+-- Cancels the caller's own booking, but only if the hotel's cancellation policy allows it:
+--   * the hotel offers free cancellation, and
+--   * now is not later than (check-in at 00:00 Pakistan time) minus cancellation_hours.
+-- (Same function is in supabase/patch_cancel_policy.sql for databases created earlier.)
 create or replace function cancel_booking(p_booking_id uuid)
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  b bookings%rowtype;
+  h hotels%rowtype;
 begin
-  update bookings set status = 'cancelled'
-  where id = p_booking_id
-    and user_id = auth.uid()
-    and status in ('pending', 'confirmed');
-  if not found then raise exception 'Booking not found or cannot be cancelled'; end if;
+  select * into b from bookings
+  where id = p_booking_id and user_id = auth.uid()
+  for update;
+  if not found then raise exception 'Booking not found'; end if;
+
+  if b.status not in ('pending', 'confirmed') then
+    raise exception 'This booking can no longer be cancelled';
+  end if;
+
+  select * into h from hotels where id = b.hotel_id;
+  if not h.free_cancellation then
+    raise exception 'This stay is non-refundable and cannot be cancelled online';
+  end if;
+
+  if now() > (b.check_in::timestamp at time zone 'Asia/Karachi') - make_interval(hours => h.cancellation_hours) then
+    raise exception 'The free cancellation period for this booking has ended';
+  end if;
+
+  update bookings set status = 'cancelled' where id = b.id;
 end;
 $$;
 

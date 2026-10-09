@@ -341,18 +341,37 @@ as $$
   group by r.hotel_id;
 $$;
 
+-- Cancels the caller's own booking only if the hotel's policy allows it: the hotel offers
+-- free cancellation AND now <= (check-in 00:00 Pakistan time) - cancellation_hours.
 create or replace function cancel_booking(p_booking_id uuid)
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  b bookings%rowtype;
+  h hotels%rowtype;
 begin
-  update bookings set status = 'cancelled'
-  where id = p_booking_id
-    and user_id = auth.uid()
-    and status in ('pending', 'confirmed');
-  if not found then raise exception 'Booking not found or cannot be cancelled'; end if;
+  select * into b from bookings
+  where id = p_booking_id and user_id = auth.uid()
+  for update;
+  if not found then raise exception 'Booking not found'; end if;
+
+  if b.status not in ('pending', 'confirmed') then
+    raise exception 'This booking can no longer be cancelled';
+  end if;
+
+  select * into h from hotels where id = b.hotel_id;
+  if not h.free_cancellation then
+    raise exception 'This stay is non-refundable and cannot be cancelled online';
+  end if;
+
+  if now() > (b.check_in::timestamp at time zone 'Asia/Karachi') - make_interval(hours => h.cancellation_hours) then
+    raise exception 'The free cancellation period for this booking has ended';
+  end if;
+
+  update bookings set status = 'cancelled' where id = b.id;
 end;
 $$;
 ```
@@ -395,4 +414,5 @@ scripts/        # verify-images.mjs
 
 Format: `YYYY-MM-DD | what changed | files | why`
 
-- (Claude Code appends entries here)
+- 2026-10-09 | Fix lint: ESLint `no-unused-vars` flagged `Icon` props used only in JSX (false alarm); added `argsIgnorePattern` | eslint.config.js | `npm run lint` failed with 3 errors; now passes. (Tool: Claude chat, not Claude Code)
+- 2026-10-09 | Change 1: Cancel booking. UI promised "Free cancellation" but nothing let a guest cancel. Added a cancel button with an "are you sure" step on the confirmation page; the database function `cancel_booking()` now enforces the hotel's policy (free-cancellation flag + deadline of check-in minus `cancellation_hours`, Pakistan time). | supabase/schema.sql, supabase/patch_cancel_policy.sql, src/lib/cancellation.js, src/lib/api.js, src/lib/ui.js, src/hooks/useBooking.js, src/pages/Confirmation.jsx | Close the gap between the policy shown and what the product can do. (Tool: Claude chat, not Claude Code)

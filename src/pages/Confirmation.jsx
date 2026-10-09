@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { CircleCheck, Compass, MapPin, Users } from 'lucide-react';
+import { CircleCheck, CircleX, Compass, LoaderCircle, MapPin, Users } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import ErrorState from '../components/ErrorState';
 import { HotelTrustBadges } from '../components/TrustBadge';
-import { useBookingByReference } from '../hooks/useBooking';
+import { useBookingByReference, useCancelBooking } from '../hooks/useBooking';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { formatDeadline, getCancelState } from '../lib/cancellation';
 import { cancellationText, countNights, formatDate, formatPKR, formatStatus, pluralize } from '../lib/formatters';
-import { btnPrimary, btnSecondary, cardClass, containerClass } from '../lib/ui';
+import { btnDanger, btnPrimary, btnSecondary, cardClass, containerClass } from '../lib/ui';
 
 function ConfirmationSkeleton() {
   return (
@@ -33,9 +35,24 @@ export default function Confirmation() {
   const { status, data: booking, reload } = useBookingByReference(reference);
   usePageTitle('Booking confirmation');
 
+  // Cancel flow: first click asks "are you sure?", second click really cancels.
+  const [confirming, setConfirming] = useState(false);
+  const { status: cancelStatus, error: cancelError, cancel } = useCancelBooking();
+  const isCancelling = cancelStatus === 'cancelling';
+
   const hotel = booking?.hotels ?? null;
   const room = booking?.rooms ?? null;
   const nights = booking ? countNights(booking.check_in, booking.check_out) : 0;
+  const isCancelled = booking?.status === 'cancelled';
+  const cancelState = getCancelState(booking, hotel);
+
+  async function handleCancel() {
+    const done = await cancel(booking.id);
+    if (done) {
+      setConfirming(false);
+      reload(); // read the booking again so the page shows the real, stored status
+    }
+  }
 
   return (
     <div className={`${containerClass} py-12`}>
@@ -57,11 +74,19 @@ export default function Confirmation() {
         <div className="mx-auto max-w-2xl">
           <div className="text-center">
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-haven-50">
-              <CircleCheck aria-hidden="true" className="h-8 w-8 text-success" />
+              {isCancelled ? (
+                <CircleX aria-hidden="true" className="h-8 w-8 text-danger" />
+              ) : (
+                <CircleCheck aria-hidden="true" className="h-8 w-8 text-success" />
+              )}
             </span>
-            <h1 className="mt-4 text-3xl font-semibold text-haven-900">Booking received</h1>
+            <h1 className="mt-4 text-3xl font-semibold text-haven-900">
+              {isCancelled ? 'Booking cancelled' : 'Booking received'}
+            </h1>
             <p className="mt-2 text-base text-ink-500">
-              Your booking is saved. Keep your reference number for check-in.
+              {isCancelled
+                ? 'This booking has been cancelled and the dates are free again.'
+                : 'Your booking is saved. Keep your reference number for check-in.'}
             </p>
           </div>
 
@@ -115,6 +140,54 @@ export default function Confirmation() {
                 <p className="rounded-xl bg-haven-50 p-4 text-sm text-ink-900">
                   {cancellationText(hotel.free_cancellation, hotel.cancellation_hours)}
                 </p>
+              </div>
+            )}
+
+            {hotel && !isCancelled && (
+              <div className="mt-4 border-t border-haven-900/10 pt-4">
+                {cancelState.allowed && !confirming && (
+                  <>
+                    <p className="text-sm text-ink-500">
+                      You can cancel for free until {formatDeadline(cancelState.deadline)} (Pakistan time).
+                    </p>
+                    <button type="button" onClick={() => setConfirming(true)} className={`${btnDanger} mt-3`}>
+                      Cancel booking
+                    </button>
+                  </>
+                )}
+
+                {cancelState.allowed && confirming && (
+                  <div role="group" aria-label="Confirm cancellation">
+                    <p className="text-base font-semibold text-haven-900">Cancel this booking?</p>
+                    <p className="mt-1 text-sm text-ink-500">
+                      Your dates will be released and this cannot be undone.
+                    </p>
+                    <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                      <button type="button" onClick={handleCancel} disabled={isCancelling} className={btnDanger}>
+                        {isCancelling && <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin" />}
+                        {isCancelling ? 'Cancelling...' : 'Yes, cancel booking'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(false)}
+                        disabled={isCancelling}
+                        className={btnSecondary}
+                      >
+                        Keep booking
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!cancelState.allowed && cancelState.reason && (
+                  <p className="text-sm text-ink-500">{cancelState.reason}</p>
+                )}
+
+                {cancelStatus === 'error' && (
+                  <p role="alert" className="mt-3 rounded-xl border border-danger/40 bg-white p-4 text-sm text-danger">
+                    {cancelError}
+                  </p>
+                )}
               </div>
             )}
           </section>
