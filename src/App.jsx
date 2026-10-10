@@ -9,6 +9,7 @@ import Results from './pages/Results';
 import HotelDetails from './pages/HotelDetails';
 import Booking from './pages/Booking';
 import Confirmation from './pages/Confirmation';
+import MyBookings from './pages/MyBookings';
 import Auth from './pages/Auth';
 import NotFound from './pages/NotFound';
 
@@ -37,6 +38,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Confirmation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="my-bookings"
+            element={
+              <ProtectedRoute>
+                <MyBookings />
               </ProtectedRoute>
             }
           />

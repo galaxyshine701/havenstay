@@ -37,6 +37,10 @@ export default function Navbar() {
 
           {!loading && user && (
             <>
+              <NavLink to="/my-bookings" className={navLinkClass}>
+                <span className="sm:hidden">Bookings</span>
+                <span className="hidden sm:inline">My bookings</span>
+              </NavLink>
               <span className="hidden max-w-[160px] truncate text-sm text-ink-500 md:inline">
                 {displayName}
               </span>
@@ -46,7 +50,7 @@ export default function Navbar() {
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-lg px-3 text-sm font-semibold text-ink-500 transition-colors hover:text-haven-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
               >
                 <LogOut aria-hidden="true" className="h-4 w-4" />
-                Sign out
+                <span className="sr-only sm:not-sr-only">Sign out</span>
               </button>
             </>
           )}

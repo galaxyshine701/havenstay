@@ -113,6 +113,17 @@ export async function createBooking(payload) {
   return data.reference;
 }
 
+// All bookings of the signed-in guest, newest first. No user filter is needed here:
+// row level security only ever returns the caller's own bookings.
+export async function getMyBookings() {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('id, reference, check_in, check_out, guests, total_price, status, created_at, hotels(name, city), rooms(name)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
 // Cancels a booking through the database function cancel_booking(). The function checks
 // that the booking is yours and that the hotel's cancellation policy still allows it;
 // otherwise it raises an error whose message is safe to show.

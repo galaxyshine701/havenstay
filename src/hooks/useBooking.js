@@ -1,5 +1,11 @@
 import { useCallback, useState } from 'react';
-import { cancelBooking, createBooking, getBookingByReference, getRoomWithHotel } from '../lib/api';
+import {
+  cancelBooking,
+  createBooking,
+  getBookingByReference,
+  getMyBookings,
+  getRoomWithHotel,
+} from '../lib/api';
 import { useQuery } from './useQuery';
 
 const CONFLICT_MESSAGE =
@@ -13,6 +19,12 @@ export function useRoomWithHotel(roomId) {
 // Confirmation page: the booking read back from the database.
 export function useBookingByReference(reference) {
   return useQuery(`booking|${reference}`, () => getBookingByReference(reference));
+}
+
+// "My bookings" page. The user id is part of the key, so signing in as someone else
+// never shows the previous person's list.
+export function useMyBookings(userId) {
+  return useQuery(`my-bookings|${userId}`, getMyBookings);
 }
 
 /**
