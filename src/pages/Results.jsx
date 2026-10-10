@@ -8,7 +8,7 @@ import EmptyState from '../components/EmptyState';
 import ErrorState from '../components/ErrorState';
 import { useHotelSearch } from '../hooks/useHotels';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { DEFAULT_FILTERS, applyFilters } from '../lib/filters';
+import { DEFAULT_FILTERS, DEFAULT_SORT, SORT_OPTIONS, applyFilters } from '../lib/filters';
 import { countNights, formatDate, pluralize } from '../lib/formatters';
 import { containerClass } from '../lib/ui';
 import { buildSearchQuery, parseSearchParams } from '../lib/validators';
@@ -21,8 +21,12 @@ export default function Results() {
   const search = parseSearchParams(searchParams);
   const { status, data, reload } = useHotelSearch(search);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [sortBy, setSortBy] = useState(DEFAULT_SORT);
 
-  const visible = useMemo(() => (data ? applyFilters(data, filters) : []), [data, filters]);
+  const visible = useMemo(
+    () => (data ? applyFilters(data, filters, sortBy) : []),
+    [data, filters, sortBy],
+  );
 
   const heading = search.location ? `Stays in ${search.location}` : 'All boutique stays';
   usePageTitle(heading);
@@ -44,10 +48,30 @@ export default function Results() {
       <div className={`${containerClass} py-8`}>
         <h1 className="text-3xl font-semibold text-haven-900">{heading}</h1>
         <p className="mt-2 text-base text-ink-500">{summary}</p>
-        <p aria-live="polite" className="mt-1 text-sm text-ink-500">
-          {status === 'success' &&
-            `${visible.length} ${pluralize(visible.length, 'stay')} shown`}
-        </p>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          <p aria-live="polite" className="text-sm text-ink-500">
+            {status === 'success' &&
+              `${visible.length} ${pluralize(visible.length, 'stay')} shown`}
+          </p>
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort-by" className="text-sm font-semibold text-ink-900">
+              Sort by
+            </label>
+            <select
+              id="sort-by"
+              value={sortBy}
+              disabled={status !== 'success'}
+              onChange={(event) => setSortBy(event.target.value)}
+              className="min-h-[44px] rounded-xl border border-haven-900/20 bg-white px-3 text-base text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-60"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[260px_1fr]">
           <aside>
