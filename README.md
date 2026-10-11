@@ -1,18 +1,24 @@
 # HavenStay: Boutique Hotel Booking Platform
 
-A hotel booking website for boutique stays in Hunza, Skardu and Islamabad. Guests can search stays, check a price breakdown, create an account and book a room, while the database itself enforces the booking rules.
+A hotel booking website for boutique stays in Hunza, Skardu and Islamabad. Guests can search and filter stays, check a price breakdown, create an account, book a room and manage their bookings, while the database itself enforces the booking rules.
 
 **Live demo:** https://havenstay-hotel.netlify.app
-![Home](screenshots/home.png)
-![Hotel details](screenshots/hotel-details.png)
-![Booking confirmation](screenshots/booking-confirmation.png)
+
+![Home page with search](screenshots-havenstay/home.png.png)
+
+![Room options with prices and availability](screenshots-havenstay/Screenshot-hotels-details.png)
+
+![Booking confirmation](screenshots-havenstay/Screenshot-booking-confirm.png)
 
 ## Features
 
 - Search stays by destination, dates and number of guests
-- Hotel pages with room options and a price breakdown
+- Filter by price per night, guest rating and free cancellation, and sort by best rated or price
+- Hotel pages with room options, availability for the chosen dates and a price breakdown
 - Sign up and sign in with Supabase Auth
-- Booking flow with a confirmation page
+- Booking flow with a confirmation page and reference number
+- My bookings page showing each guest's own bookings
+- Cancel a booking, allowed only for free-cancellation hotels and before the hotel's deadline
 - Double-booking prevention enforced at database level
 
 ## Tech Stack
@@ -32,6 +38,7 @@ Booking rules live in the database, so they hold no matter what the frontend sen
 | Capacity, past dates and final price | Trigger (price is calculated on the server) |
 | Guests can only see their own bookings | Row Level Security policies |
 | Availability across all guests | Security-definer database functions |
+| Cancellation only within the hotel's policy | `cancel_booking()` database function |
 
 ## Run Locally
 
@@ -60,11 +67,11 @@ The app ships with nine fictional hotels and 23 rooms. Ratings, reviews and pric
 ```
 src/
   components/   reusable UI components
-  pages/        search, hotel details, booking, confirmation
+  pages/        home, results, hotel details, booking, confirmation, my bookings, sign in
   hooks/        custom React hooks
   context/      shared app state
-  lib/          Supabase client and helpers
-supabase/       database schema and seed data
+  lib/          Supabase client, filters, pricing and cancellation helpers
+supabase/       database schema, seed data and cancellation patch
 scripts/        utility scripts
 ```
 
